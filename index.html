@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>오목 월드</title>
+<style>
+:root{--bg:#f4ead7;--paper:#fffaf1;--wood:#d9a95f;--brown:#4b3521;--muted:#79664b;--line:#e2cfaa}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(135deg,#f8efdf,#e8d3ad);font-family:system-ui,-apple-system,"Malgun Gothic",sans-serif;color:#2c241b;min-height:100vh;padding:20px 12px}
+main{width:min(960px,100%);margin:auto}.hidden{display:none!important}
+header{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px}
+h1{font-size:clamp(27px,5vw,38px);margin:0}h2{margin:0 0 12px;font-size:22px}h3{margin:0 0 8px}
+.sub{color:var(--muted);margin:5px 0 0}.panel{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 8px 24px #5b3d1b14;margin-bottom:16px}
+button{border:0;border-radius:12px;padding:11px 16px;font:inherit;font-weight:750;background:var(--brown);color:white;cursor:pointer}
+button.secondary{background:#e9dcc5;color:#49351f}button:disabled{opacity:.45;cursor:not-allowed}
+input,select{width:100%;padding:12px;border:1px solid #cbb58f;border-radius:10px;font:inherit;background:white;color:#222}
+label{display:block;font-weight:700;margin:12px 0 6px}.actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:14px}
+.auth{max-width:440px;margin:7vh auto}.auth h1{text-align:center}.auth p{text-align:center}
+.message{min-height:22px;color:#a13c31;font-size:14px;margin:10px 0 0}
+.top-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.userpill{background:#f0e3cb;border-radius:99px;padding:8px 12px;font-weight:700}
+.home-layout{display:grid;grid-template-columns:minmax(250px,.85fr) minmax(0,1.5fr);gap:16px;align-items:start}
+.menu-grid{display:grid;grid-template-columns:1fr;gap:14px}
+.menu-card{padding:22px;border:1px solid var(--line);border-radius:16px;background:#fffdf8}
+.menu-card p{color:var(--muted);min-height:42px}.menu-card .big{font-size:36px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.room{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 0;border-bottom:1px solid #eee2cc}
+.room:last-child{border:0}.room small{display:block;color:var(--muted);margin-top:4px}
+.tag{display:inline-block;background:#efe2ca;border-radius:99px;padding:4px 9px;font-size:12px;font-weight:700}
+table{width:100%;border-collapse:collapse;text-align:center}th,td{padding:10px 6px;border-bottom:1px solid #eee2cc}th{color:var(--muted);font-size:13px}
+#board{width:min(100%,600px);height:auto;aspect-ratio:1;display:block;border-radius:8px;touch-action:manipulation;cursor:pointer;box-shadow:0 4px 14px #6a451d33}
+.board-wrap{display:flex;justify-content:center}.game-layout{display:grid;grid-template-columns:minmax(0,1fr) 250px;gap:16px}
+#status{font-size:20px;font-weight:800;margin-bottom:8px}.note{font-size:13px;color:var(--muted);line-height:1.6}
+.modal-back{position:fixed;inset:0;background:#1d160dcc;display:grid;place-items:center;padding:16px;z-index:5}
+.modal{width:min(430px,100%);background:var(--paper);border-radius:18px;padding:22px}
+@media(max-width:680px){.home-layout,.menu-grid,.game-layout{grid-template-columns:1fr}.game-layout aside{order:-1}header{align-items:flex-start}}
+</style>
+</head>
+<body>
+<main>
+<section id="auth" class="panel auth">
+<h1>⚫ 오목 월드 ⚪</h1><p class="sub">닉네임과 비밀번호로 가입하거나 로그인하세요.</p>
+<label for="nickname">닉네임</label><input id="nickname" maxlength="16" autocomplete="username" placeholder="2~16자 닉네임">
+<label for="password">비밀번호</label><input id="password" type="password" autocomplete="current-password" placeholder="4자 이상 비밀번호">
+<div class="actions"><button id="register">가입하기</button><button class="secondary" id="login">로그인</button></div>
+<p id="authMsg" class="message"></p><p class="note">현재 버전은 계정과 기록이 이 브라우저에 저장되는 미리보기입니다. 실제 인터넷 멀티플레이는 서버 연결이 필요합니다.</p>
+</section>
+
+<section id="home" class="hidden">
+<header><div><h1>⚫ 오목 월드 ⚪</h1><p class="sub">함께 두고, 승리하고, 랭크를 올려 보세요!</p></div><div class="top-actions"><span id="userLabel" class="userpill"></span><button class="secondary" id="logout">로그아웃</button></div></header>
+<div class="home-layout">
+<div class="panel"><div class="row"><h2>🏆 랭크 순위</h2><span class="tag">순위표</span></div>
+<div style="overflow-x:auto"><table><thead><tr><th>순위</th><th>닉네임</th><th>랭크</th><th>승</th><th>패</th></tr></thead><tbody id="rankingRows"></tbody></table></div>
+<p class="note">승리 +20점 · 패배 -10점</p></div>
+<div class="menu-grid">
+<div class="menu-card"><div class="big">🏆</div><h2>랭크전</h2><p>승리해서 점수를 올려 보세요!</p><button id="rankedBtn">랭크전 들어가기</button></div>
+<div class="menu-card"><div class="big">🎮</div><h2>일반전</h2><p>편하게 오목을 즐겨 보세요!</p><button id="normalBtn">일반전 들어가기</button></div>
+</div>
+</div>
+</section>
+
+<section id="lobby" class="hidden">
+<header><div><h1 id="lobbyTitle">방 목록</h1><p class="sub">방을 만들거나 목록에서 참여하세요.</p></div><div class="top-actions"><button class="secondary" id="homeBtn">메인 화면</button></div></header>
+<div class="panel"><div class="row"><div><h2 id="modeHeading">랭크전 방</h2><p class="sub">방을 만든 뒤 상대가 입장하면 대국을 시작할 수 있습니다.</p></div><button id="createRoom">＋ 방 만들기</button></div><div id="roomList"></div>
+<p class="note">현재는 같은 브라우저의 데모 방 목록입니다. 다른 사람의 기기에서 방을 보거나 함께 두는 기능은 온라인 서버를 연결해야 작동합니다.</p></div>
+</section>
+
+<section id="gameScreen" class="hidden">
+<header><div><h1>오목 대국</h1><p class="sub" id="gameRoomLabel"></p></div><button class="secondary" id="leaveGame">방 나가기</button></header>
+<div class="game-layout">
+<div class="panel"><div id="status">흑돌 차례</div><div id="gameHint" class="sub">바둑판 교차점을 눌러 돌을 놓으세요.</div><div class="board-wrap"><canvas id="board" width="600" height="600"></canvas></div>
+<div class="actions"><button class="secondary" id="undo">한 수 무르기</button><button id="newGame">다시 두기</button></div></div>
+<aside class="panel"><h2>대국 정보</h2><p id="blackPlayer"></p><p id="whitePlayer"></p><p class="note">흑돌부터 시작합니다. 가로·세로·대각선으로 먼저 5개를 연결하면 승리합니다.</p><div id="resultActions" class="actions"></div></aside>
+</div>
+</section>
+</main>
+
+<div id="roomModal" class="modal-back hidden"><div class="modal"><h2>새 방 만들기</h2><label for="roomName">방 이름</label><input id="roomName" maxlength="24" placeholder="예: 즐겜 오목 한 판"><label for="roomMode">게임 모드</label><select id="roomMode"><option value="ranked">랭크전</option><option value="normal">일반전</option></select><div class="actions"><button id="confirmCreate">방 만들기</button><button class="secondary" id="cancelCreate">취소</button></div></div></div>
+
+<script>
+(()=>{
+const $=id=>document.getElementById(id), ACCOUNT='omok_world_accounts', ROOM='omok_world_rooms';
+let currentUser=null, mode='ranked', currentRoom=null, board,turn,moves,winner;
+const N=15,S=600,P=24,STEP=(S-P*2)/(N-1),canvas=$('board'),ctx=canvas.getContext('2d');
+function accounts(){try{return JSON.parse(localStorage.getItem(ACCOUNT)||'{}')}catch{return {}}}
+function saveAccounts(a){localStorage.setItem(ACCOUNT,JSON.stringify(a))}
+function rooms(){try{return JSON.parse(localStorage.getItem(ROOM)||'[]')}catch{return []}}
+function saveRooms(r){localStorage.setItem(ROOM,JSON.stringify(r))}
+function show(which){['auth','home','lobby','gameScreen'].forEach(id=>$(id).classList.toggle('hidden',id!==which))}
+async function hash(p,s){const k=await crypto.subtle.importKey('raw',new TextEncoder().encode(p),'PBKDF2',false,['deriveBits']);const b=await crypto.subtle.deriveBits({name:'PBKDF2',salt:new TextEncoder().encode(s),iterations:120000,hash:'SHA-256'},k,256);return [...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('')}
+function enter(name){currentUser=name; $('userLabel').textContent='👤 '+name;show('home');renderRanks()}
+$('register').onclick=async()=>{let n=$('nickname').value.trim(),p=$('password').value;if(n.length<2||n.length>16){$('authMsg').textContent='닉네임은 2~16자로 입력하세요.';return}if(p.length<4){$('authMsg').textContent='비밀번호는 4자 이상 입력하세요.';return}let a=accounts(),k=n.toLowerCase();if(a[k]){$('authMsg').textContent='이미 있는 닉네임입니다. 로그인해 주세요.';return}try{let salt=[...crypto.getRandomValues(new Uint8Array(16))].map(x=>x.toString(16).padStart(2,'0')).join('');a[k]={name:n,salt,hash:await hash(p,salt),wins:0,losses:0,points:0};saveAccounts(a);$('authMsg').textContent='';enter(n)}catch(e){$('authMsg').textContent='계정을 만들 수 없습니다. 보안 연결의 브라우저에서 열어 주세요.'}};
+$('login').onclick=async()=>{let n=$('nickname').value.trim(),p=$('password').value,a=accounts(),u=a[n.toLowerCase()];if(!u){$('authMsg').textContent='계정을 찾을 수 없습니다.';return}try{if(await hash(p,u.salt)!==u.hash){$('authMsg').textContent='비밀번호가 올바르지 않습니다.';return}enter(u.name)}catch(e){$('authMsg').textContent='로그인에 실패했습니다.'}};
+$('logout').onclick=()=>{currentUser=null;$('password').value='';show('auth')};
+function rank(points){return points>=500?'다이아':points>=300?'플래티넘':points>=150?'골드':points>=50?'실버':'브론즈'}
+function renderRanks(){let list=Object.values(accounts()).sort((a,b)=>b.points-a.points||b.wins-a.wins);$('rankingRows').innerHTML=list.length?list.map((u,i)=>`<tr><td>${i+1}</td><td>${esc(u.name)}${u.name===currentUser?' (나)':''}</td><td>${rank(u.points)}</td><td>${u.wins}</td><td>${u.losses}</td><td>${(u.wins+u.losses)?Math.round(u.wins/(u.wins+u.losses)*100):0}%</td></tr>`).join(''):'<tr><td colspan="6">아직 기록이 없습니다.</td></tr>'}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+$('rankedBtn').onclick=()=>openLobby('ranked');$('normalBtn').onclick=()=>openLobby('normal');$('homeBtn').onclick=()=>{show('home');renderRanks()};
+function openLobby(m){mode=m;$('lobbyTitle').textContent=m==='ranked'?'🏆 랭크전':'🎮 일반전';$('modeHeading').textContent=m==='ranked'?'랭크전 방':'일반전 방';$('roomMode').value=m;show('lobby');renderRooms()}
+function renderRooms(){let list=rooms().filter(r=>r.mode===mode&&r.status==='waiting');$('roomList').innerHTML=list.length?list.map(r=>`<div class="room"><div><strong>${esc(r.title)}</strong><small>방장: ${esc(r.host)} · ${r.mode==='ranked'?'랭크전':'일반전'} · ${r.players.length}/2명</small></div><button data-join="${r.id}" ${r.players.includes(currentUser)?'disabled':''}>참가하기</button></div>`).join(''):'<p class="sub">아직 열린 방이 없습니다. 첫 번째 방을 만들어 보세요!</p>';$('roomList').querySelectorAll('[data-join]').forEach(b=>b.onclick=()=>joinRoom(b.dataset.join))}
+$('createRoom').onclick=()=>{$('roomName').value=currentUser+'의 오목방';$('roomMode').value=mode;$('roomModal').classList.remove('hidden')};
+$('cancelCreate').onclick=()=> $('roomModal').classList.add('hidden');
+$('confirmCreate').onclick=()=>{let title=$('roomName').value.trim()||currentUser+'의 오목방',m=$('roomMode').value;mode=m;let r=rooms();let room={id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),title,mode:m,host:currentUser,players:[currentUser],status:'waiting'};r.push(room);saveRooms(r);$('roomModal').classList.add('hidden');renderRooms();joinRoom(room.id,true)};
+function joinRoom(id,host=false){let rs=rooms(),r=rs.find(x=>x.id===id);if(!r)return;if(!r.players.includes(currentUser)){if(r.players.length>=2){alert('방이 가득 찼습니다.');return}r.players.push(currentUser)}if(r.players.length>=2){r.status='playing'}saveRooms(rs);currentRoom=r;startGame()}
+function startGame(){show('gameScreen');$('gameRoomLabel').textContent=(currentRoom.mode==='ranked'?'랭크전':'일반전')+' · '+currentRoom.title;$('blackPlayer').textContent='⚫ 흑돌: '+currentRoom.players[0];$('whitePlayer').textContent='⚪ 백돌: '+(currentRoom.players[1]||'상대 입장 대기 중');$('resultActions').innerHTML='';resetBoard()}
+function pos(i){return P+i*STEP}
+function draw(){ctx.clearRect(0,0,S,S);ctx.fillStyle='#d9a95f';ctx.fillRect(0,0,S,S);ctx.strokeStyle='#51391f';ctx.lineWidth=1.3;for(let i=0;i<N;i++){ctx.beginPath();ctx.moveTo(pos(i),P);ctx.lineTo(pos(i),S-P);ctx.stroke();ctx.beginPath();ctx.moveTo(P,pos(i));ctx.lineTo(S-P,pos(i));ctx.stroke()}[[3,3],[3,11],[7,7],[11,3],[11,11]].forEach(([x,y])=>{ctx.fillStyle='#51391f';ctx.beginPath();ctx.arc(pos(x),pos(y),4,0,7);ctx.fill()});for(let y=0;y<N;y++)for(let x=0;x<N;x++)if(board[y][x]){let g=ctx.createRadialGradient(pos(x)-5,pos(y)-6,2,pos(x),pos(y),13);g.addColorStop(0,board[y][x]===1?'#666':'#fff');g.addColorStop(1,board[y][x]===1?'#050505':'#d8d8d8');ctx.beginPath();ctx.arc(pos(x),pos(y),13,0,7);ctx.fillStyle=g;ctx.fill();ctx.strokeStyle=board[y][x]===1?'#111':'#aaa';ctx.stroke()}if(moves.length){let[x,y]=moves[moves.length-1];ctx.strokeStyle='#e23b2e';ctx.lineWidth=2;ctx.strokeRect(pos(x)-5,pos(y)-5,10,10)}}
+function resetBoard(){board=Array.from({length:N},()=>Array(N).fill(0));turn=1;moves=[];winner=0;$('status').textContent='흑돌 차례';$('gameHint').textContent='바둑판 교차점을 눌러 돌을 놓으세요.';draw()}
+function lineCount(x,y,dx,dy,c){let n=1;for(let sign of [1,-1]){let a=x+dx*sign,b=y+dy*sign;while(a>=0&&a<N&&b>=0&&b<N&&board[b][a]===c){n++;a+=dx*sign;b+=dy*sign}}return n}
+function finish(c){winner=c;let winName=currentRoom.players[c===1?0:1]||currentUser,loseName=currentRoom.players[c===1?1:0];$('status').textContent='🎉 '+winName+' 승리!';$('gameHint').textContent='대국이 끝났습니다.';if(currentRoom.mode==='ranked'&&loseName){let a=accounts(),w=a[winName.toLowerCase()],l=a[loseName.toLowerCase()];if(w&&l){w.wins++;w.points+=20;l.losses++;l.points=Math.max(0,l.points-10);saveAccounts(a);renderRanks()}}$('resultActions').innerHTML='<button id="again">다시 두기</button>'; $('again').onclick=resetBoard}
+canvas.onclick=e=>{if(winner||!currentRoom)return;if(currentRoom.players.length<2){$('gameHint').textContent='상대가 참가해야 대국을 시작할 수 있습니다.';return}let r=canvas.getBoundingClientRect(),x=(e.clientX-r.left)*S/r.width,y=(e.clientY-r.top)*S/r.height,ix=Math.round((x-P)/STEP),iy=Math.round((y-P)/STEP);if(ix<0||ix>=N||iy<0||iy>=N||Math.hypot(x-pos(ix),y-pos(iy))>STEP*.48||board[iy][ix])return;board[iy][ix]=turn;moves.push([ix,iy]);draw();if([[1,0],[0,1],[1,1],[1,-1]].some(([dx,dy])=>lineCount(ix,iy,dx,dy,turn)>=5)){finish(turn);return}turn=3-turn;$('status').textContent=turn===1?'흑돌 차례':'백돌 차례';$('gameHint').textContent=moves.length+'수 진행'};
+$('undo').onclick=()=>{if(!moves.length||winner)return;let[x,y]=moves.pop();board[y][x]=0;turn=3-turn;$('status').textContent=turn===1?'흑돌 차례':'백돌 차례';$('gameHint').textContent='한 수를 무르었습니다.';draw()};
+$('newGame').onclick=resetBoard;
+$('leaveGame').onclick=()=>{if(currentRoom){let rs=rooms();rs=rs.filter(r=>r.id!==currentRoom.id);saveRooms(rs)}currentRoom=null;openLobby(mode)};
+show('auth');
+})();
+</script>
+</body></html>
